@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IPL Auction — Stage</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{--dark:#050810;--dark2:#0d1117;--gold:#FFD700;--font-d:'Bebas Neue',sans-serif;--font-u:'Rajdhani',sans-serif;--font-t:'Orbitron',monospace;}
+    html,body{height:100%;font-family:var(--font-u);background:var(--dark);color:#fff;overflow:hidden;}
+    ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#333;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pricePop{0%{transform:scale(1)}40%{transform:scale(1.2)}100%{transform:scale(1)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes glow{0%,100%{opacity:.3}50%{opacity:.9}}
+    @keyframes rise{0%{transform:translateY(100%);opacity:0}60%{opacity:.8}100%{transform:translateY(-120px);opacity:0}}
+    @keyframes soldAnim{0%{opacity:0;transform:scale(.4) rotate(-15deg)}65%{transform:scale(1.12) rotate(4deg)}100%{opacity:1;transform:scale(1) rotate(-5deg)}}
+    @keyframes ticker{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+    @keyframes borderPulse{0%,100%{box-shadow:0 0 6px currentColor}50%{box-shadow:0 0 24px currentColor}}
+    @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+    #setupScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#0d1a3a,#050810);padding:24px;}
+    .sc{background:#0d1117;border:1px solid #1f2937;border-radius:18px;padding:26px 22px;max-width:400px;width:100%;}
+    .st{font-family:var(--font-d);font-size:36px;color:var(--gold);letter-spacing:4px;text-align:center;margin-bottom:22px;}
+    .si{width:100%;padding:12px 14px;background:#161b22;border:1px solid #30363d;border-radius:8px;color:#fff;font-size:14px;font-family:var(--font-u);margin-bottom:12px;display:block;outline:none;}
+    .si:focus{border-color:var(--gold);}
+    .sb{width:100%;padding:14px;background:linear-gradient(135deg,#b8860b,#FFD700);border:none;border-radius:10px;font-family:var(--font-d);font-size:22px;letter-spacing:3px;color:#000;cursor:pointer;}
+
+    #stageRoot{display:none;height:100vh;position:relative;overflow:hidden;}
+    .bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 20%,#0d1a3a,#050810);z-index:0;}
+    .pts{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+    .pt{position:absolute;bottom:-10px;width:3px;height:3px;border-radius:50%;background:rgba(255,215,0,.5);animation:rise var(--d,4s) infinite ease-in var(--dl,0s);}
+
+    .hdr{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 22px;}
+    .brand{font-family:var(--font-d);font-size:28px;color:var(--gold);letter-spacing:6px;}
+    .lpill{display:flex;align-items:center;gap:7px;background:rgba(255,23,68,.12);border:1px solid #ff1744;padding:5px 13px;border-radius:4px;}
+    .ldot{width:7px;height:7px;background:#ff1744;border-radius:50%;animation:pulse 1s infinite;}
+    .ltxt{font-size:10px;color:#ff1744;font-weight:700;letter-spacing:3px;}
+
+    .main{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;padding:0 20px 90px;}
+
+    .idle{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);}
+    .idle-ic{font-size:88px;filter:drop-shadow(0 0 30px #FFD700);animation:glow 2s infinite;}
+    .idle-tx{font-family:var(--font-d);font-size:38px;color:var(--gold);letter-spacing:6px;margin-top:16px;text-align:center;}
+    .idle-sx{color:#374151;font-size:13px;letter-spacing:3px;margin-top:6px;}
+
+    .pstage{display:flex;flex-direction:column;align-items:center;animation:fadeUp .5s ease;}
+    .awrap{position:relative;margin:8px 0 14px;}
+    .sphoto{width:158px;height:158px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,215,0,.3);display:block;position:relative;z-index:2;}
+    .sfb{width:158px;height:158px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:68px;z-index:2;border:3px solid rgba(255,255,255,.1);}
+    .aring{position:absolute;inset:-10px;border-radius:50%;border:2px solid var(--gold);opacity:.3;animation:glow 2s infinite;}
+    .aglow{position:absolute;inset:-30px;border-radius:50%;opacity:.12;filter:blur(25px);}
+
+    .sname{font-family:var(--font-d);font-size:52px;color:#fff;letter-spacing:4px;text-align:center;text-shadow:0 0 40px rgba(255,215,0,.3);}
+    .smeta{display:flex;align-items:center;gap:12px;margin:8px 0 16px;}
+    .rpill{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;color:#000;}
+    .snat{color:#6b7280;font-size:13px;}
+
+    .bidwrap{text-align:center;margin-bottom:14px;}
+    .bidlbl{color:#6b7280;font-size:10px;letter-spacing:5px;font-weight:700;margin-bottom:4px;}
+    .bidprice{font-family:var(--font-t);font-size:66px;color:var(--gold);letter-spacing:4px;text-shadow:0 0 50px rgba(255,215,0,.5);}
+
+    .tbadge{border:2px solid;border-radius:12px;padding:10px 28px;text-align:center;margin-bottom:14px;animation:borderPulse 1.5s infinite;}
+    .tblbl{font-size:10px;color:#6b7280;letter-spacing:3px;margin-bottom:4px;}
+    .tbrow{display:flex;align-items:center;justify-content:center;gap:10px;}
+    .tbname{font-family:var(--font-d);font-size:24px;letter-spacing:3px;}
+
+    .timer{font-family:var(--font-t);font-size:50px;letter-spacing:6px;text-shadow:0 0 30px currentColor;}
+
+    #soldOv{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(8px);flex-direction:column;gap:14px;padding:24px;}
+    .sstamp{font-family:var(--font-d);font-size:88px;color:#ff1744;border:6px solid #ff1744;padding:10px 42px;border-radius:8px;transform:rotate(-6deg);animation:soldAnim .5s cubic-bezier(.36,1.6,.4,1) forwards;text-shadow:0 0 40px #ff174466;}
+    .sinfo{text-align:center;animation:fadeUp .4s .35s ease both;}
+    .splayer{font-family:var(--font-d);font-size:42px;color:#fff;letter-spacing:3px;}
+    .stolbl{font-size:11px;color:#6b7280;letter-spacing:4px;margin:8px 0 4px;}
+    .stewrap{display:flex;align-items:center;justify-content:center;gap:12px;}
+    .stename{font-family:var(--font-d);font-size:30px;letter-spacing:3px;}
+    .sprice{font-family:var(--font-t);font-size:24px;color:var(--gold);margin-top:10px;}
+
+    #unsoldOv{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(6px);}
+    .ustamp{font-family:var(--font-d);font-size:88px;color:#6b7280;border:6px solid #6b7280;padding:10px 42px;border-radius:8px;transform:rotate(-6deg);animation:soldAnim .5s ease forwards;}
+
+    .confetti{position:fixed;pointer-events:none;z-index:200;width:8px;height:8px;border-radius:2px;animation:confettiFall var(--d,2s) ease-in var(--dl,0s) forwards;}
+
+    .side{position:fixed;right:12px;top:68px;width:205px;background:rgba(13,17,23,.92);border:1px solid #1f2937;border-radius:12px;padding:11px;z-index:20;backdrop-filter:blur(10px);}
+    .slbl{font-size:10px;color:#6b7280;letter-spacing:3px;font-weight:700;margin-bottom:7px;}
+    .srow{display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #1f293733;}
+    .sn{flex:1;font-size:11px;color:#d1d5db;}
+    .st2{font-size:10px;font-weight:700;margin-right:4px;}
+    .sp2{font-family:var(--font-t);font-size:10px;color:var(--gold);}
+
+    .ticker{position:fixed;bottom:42px;left:0;right:0;height:26px;background:rgba(255,215,0,.07);border-top:1px solid rgba(255,215,0,.14);overflow:hidden;z-index:30;}
+    .tickertxt{display:inline-block;white-space:nowrap;padding:4px 0;font-family:var(--font-t);font-size:10px;color:var(--gold);letter-spacing:2px;animation:ticker 35s linear infinite;}
+
+    .pbar{position:fixed;bottom:0;left:0;right:0;display:flex;gap:3px;padding:6px 8px;background:rgba(5,8,16,.96);border-top:1px solid #1f2937;z-index:20;overflow-x:auto;}
+    .pi{display:flex;flex-direction:column;align-items:center;border:1px solid;border-radius:7px;padding:4px 7px;min-width:64px;flex-shrink:0;}
+    .piid{font-family:var(--font-d);font-size:13px;}
+    .piamt{font-size:9px;color:#aaa;margin-top:1px;font-family:var(--font-t);}
+  </style>
+<script>
+const PLAYERS=[
+  {id:1,  name:"V Kohli",           role:"Batsman",      base:200,nat:"India",      team:"RCB", stats:"BAT | Retained"},
+  {id:2,  name:"JJ Bumrah",         role:"Bowler",       base:200,nat:"India",      team:"MI",  stats:"BOWL | Retained"},
+  {id:3,  name:"SA Yadav",          role:"Batsman",      base:150,nat:"India",      team:"MI",  stats:"BAT | Retained"},
+  {id:4,  name:"HH Pandya",         role:"All-rounder",  base:150,nat:"India",      team:"MI",  stats:"AR | Retained"},
+  {id:5,  name:"RG Sharma",         role:"Batsman",      base:150,nat:"India",      team:"MI",  stats:"BAT | Retained"},
+  {id:6,  name:"RR Pant",           role:"Wicketkeeper", base:270,nat:"India",      team:"LSG", stats:"BAT | ₹27 Cr"},
+  {id:7,  name:"SS Iyer",           role:"Batsman",      base:268,nat:"India",      team:"PBKS",stats:"BAT | ₹26.75 Cr"},
+  {id:8,  name:"H Klaasen",         role:"Wicketkeeper", base:230,nat:"S.Africa",   team:"SRH", stats:"BAT | ₹23 Cr"},
+  {id:9,  name:"C Green",           role:"All-rounder",  base:252,nat:"Australia",  team:"KKR", stats:"AR | ₹25.20 Cr"},
+  {id:10, name:"N Pooran",          role:"Wicketkeeper", base:210,nat:"W.Indies",   team:"LSG", stats:"BAT | ₹21 Cr"},
+  {id:11, name:"M Pathirana",       role:"Bowler",       base:180,nat:"Sri Lanka",  team:"KKR", stats:"BOWL | ₹18 Cr"},
+  {id:12, name:"PJ Cummins",        role:"All-rounder",  base:180,nat:"Australia",  team:"SRH", stats:"AR | ₹18 Cr"},
+  {id:13, name:"Rashid Khan",       role:"Bowler",       base:180,nat:"Afghanistan",team:"GT",  stats:"BOWL | ₹18 Cr"},
+  {id:14, name:"Arshdeep Singh",    role:"Bowler",       base:180,nat:"India",      team:"PBKS",stats:"BOWL | ₹18 Cr"},
+  {id:15, name:"YS Chahal",         role:"Bowler",       base:180,nat:"India",      team:"PBKS",stats:"BOWL | ₹18 Cr"},
+  {id:16, name:"YBK Jaiswal",       role:"All-rounder",  base:180,nat:"India",      team:"RR",  stats:"AR | ₹18 Cr"},
+  {id:17, name:"TA Boult",          role:"Bowler",       base:125,nat:"New Zealand",team:"MI",  stats:"BOWL | ₹12.5 Cr"},
+  {id:18, name:"JR Hazlewood",      role:"Bowler",       base:125,nat:"Australia",  team:"RCB", stats:"BOWL | ₹12.5 Cr"},
+  {id:19, name:"JC Archer",         role:"Bowler",       base:125,nat:"England",    team:"RR",  stats:"BOWL | ₹12.5 Cr"},
+  {id:20, name:"SP Narine",         role:"All-rounder",  base:120,nat:"W.Indies",   team:"KKR", stats:"BOWL | ₹12 Cr"},
+  {id:21, name:"CV Varun",          role:"Bowler",       base:120,nat:"India",      team:"KKR", stats:"BOWL | ₹12 Cr"},
+  {id:22, name:"Shubman Gill",      role:"Batsman",      base:165,nat:"India",      team:"GT",  stats:"BAT | ₹16.5 Cr"},
+  {id:23, name:"Mohammed Siraj",    role:"Bowler",       base:123,nat:"India",      team:"GT",  stats:"BOWL | ₹12.25 Cr"},
+  {id:24, name:"JC Buttler",        role:"Wicketkeeper", base:158,nat:"England",    team:"GT",  stats:"BAT | ₹15.75 Cr"},
+  {id:25, name:"K Rabada",          role:"Bowler",       base:108,nat:"S.Africa",   team:"GT",  stats:"BOWL | ₹10.75 Cr"},
+  {id:26, name:"VR Iyer",           role:"All-rounder",  base:70, nat:"India",      team:"RCB", stats:"AR | ₹7 Cr"},
+  {id:27, name:"SV Samson",         role:"Wicketkeeper", base:180,nat:"India",      team:"CSK", stats:"BAT | ₹18 Cr"},
+  {id:28, name:"RD Gaikwad",        role:"Batsman",      base:180,nat:"India",      team:"CSK", stats:"BAT | ₹18 Cr"},
+  {id:29, name:"S Dube",            role:"All-rounder",  base:120,nat:"India",      team:"CSK", stats:"AR | ₹12 Cr"},
+  {id:30, name:"Noor Ahmad",        role:"Bowler",       base:100,nat:"Afghanistan",team:"CSK", stats:"BOWL | ₹10 Cr"},
+  {id:31, name:"MS Dhoni",          role:"Wicketkeeper", base:40, nat:"India",      team:"CSK", stats:"BAT | ₹4 Cr"},
+  {id:32, name:"RA Jadeja",         role:"All-rounder",  base:140,nat:"India",      team:"RR",  stats:"AR | ₹14 Cr"},
+  {id:33, name:"R Parag",           role:"All-rounder",  base:140,nat:"India",      team:"RR",  stats:"AR | ₹14 Cr"},
+  {id:34, name:"DC Jurel",          role:"Wicketkeeper", base:140,nat:"India",      team:"RR",  stats:"BAT | ₹14 Cr"},
+  {id:35, name:"SO Hetmyer",        role:"Batsman",      base:110,nat:"W.Indies",   team:"RR",  stats:"BAT | ₹11 Cr"},
+  {id:36, name:"Abhishek Sharma",   role:"All-rounder",  base:140,nat:"India",      team:"SRH", stats:"AR | ₹14 Cr"},
+  {id:37, name:"TM Head",           role:"Batsman",      base:140,nat:"Australia",  team:"SRH", stats:"BAT | ₹14 Cr"},
+  {id:38, name:"Ishan Kishan",      role:"Wicketkeeper", base:113,nat:"India",      team:"SRH", stats:"BAT | ₹11.25 Cr"},
+  {id:39, name:"KL Rahul",          role:"Wicketkeeper", base:140,nat:"India",      team:"DC",  stats:"BAT | ₹14 Cr"},
+  {id:40, name:"Abishek Porel",     role:"Wicketkeeper", base:40, nat:"India",      team:"DC",  stats:"BAT | ₹4 Cr"},
+  {id:41, name:"PD Salt",           role:"Wicketkeeper", base:115,nat:"England",    team:"RCB", stats:"BAT | ₹11.5 Cr"},
+  {id:42, name:"RM Patidar",        role:"Batsman",      base:110,nat:"India",      team:"RCB", stats:"BAT | ₹11 Cr"},
+  {id:43, name:"B Kumar",           role:"Bowler",       base:108,nat:"India",      team:"RCB", stats:"BOWL | ₹10.75 Cr"},
+  {id:44, name:"RK Singh",          role:"Batsman",      base:130,nat:"India",      team:"KKR", stats:"BAT | ₹13 Cr"},
+  {id:45, name:"M Prasidh Krishna", role:"Bowler",       base:95, nat:"India",      team:"GT",  stats:"BOWL | ₹9.5 Cr"},
+  {id:46, name:"B Sai Sudharsan",   role:"Batsman",      base:85, nat:"India",      team:"GT",  stats:"BAT | ₹8.5 Cr"},
+  {id:47, name:"HV Patel",          role:"All-rounder",  base:80, nat:"India",      team:"SRH", stats:"AR | ₹8 Cr"},
+  {id:48, name:"K Nitish Kumar R",  role:"All-rounder",  base:60, nat:"India",      team:"SRH", stats:"AR | ₹6 Cr"},
+  {id:49, name:"LS Livingstone",    role:"All-rounder",  base:130,nat:"England",    team:"SRH", stats:"AR | ₹13 Cr"},
+  {id:50, name:"Ravi Bishnoi",      role:"Bowler",       base:72, nat:"India",      team:"RR",  stats:"BOWL | ₹7.20 Cr"},
+  {id:51, name:"MP Stoinis",        role:"All-rounder",  base:110,nat:"Australia",  team:"PBKS",stats:"AR | ₹11 Cr"},
+  {id:52, name:"M Jansen",          role:"All-rounder",  base:70, nat:"S.Africa",   team:"PBKS",stats:"AR | ₹7 Cr"},
+  {id:53, name:"FH Allen",          role:"Batsman",      base:20, nat:"New Zealand",team:"KKR", stats:"BAT | ₹2 Cr"},
+  {id:54, name:"Q de Kock",         role:"Wicketkeeper", base:10, nat:"S.Africa",   team:"MI",  stats:"BAT | ₹1 Cr"},
+  {id:55, name:"DA Miller",         role:"Batsman",      base:20, nat:"S.Africa",   team:"DC",  stats:"BAT | ₹2 Cr"},
+  {id:56, name:"PWH de Silva",      role:"All-rounder",  base:20, nat:"Sri Lanka",  team:"LSG", stats:"AR | ₹2 Cr"},
+  {id:57, name:"Shivam Mavi",       role:"Bowler",       base:8,  nat:"India",      team:"SRH", stats:"BOWL | ₹0.75 Cr"},
+  {id:58, name:"BM Duckett",        role:"Batsman",      base:20, nat:"England",    team:"DC",  stats:"BAT | ₹2 Cr"},
+  {id:59, name:"A Nortje",          role:"Bowler",       base:20, nat:"S.Africa",   team:"LSG", stats:"BOWL | ₹2 Cr"},
+  {id:60, name:"RD Chahar",         role:"Bowler",       base:52, nat:"India",      team:"CSK", stats:"BOWL | ₹5.2 Cr"},
+  {id:61, name:"Akash Deep",        role:"Bowler",       base:10, nat:"India",      team:"KKR", stats:"BOWL | ₹1 Cr"},
+  {id:62, name:"JA Duffy",          role:"Bowler",       base:20, nat:"Ireland",    team:"RCB", stats:"BOWL | ₹2 Cr"},
+  {id:63, name:"Washington Sundar", role:"All-rounder",  base:32, nat:"India",      team:"GT",  stats:"AR | ₹3.2 Cr"},
+  {id:64, name:"R Tewatia",         role:"All-rounder",  base:40, nat:"India",      team:"GT",  stats:"AR | ₹4 Cr"},
+  {id:65, name:"DL Chahar",         role:"Bowler",       base:93, nat:"India",      team:"MI",  stats:"BOWL | ₹9.25 Cr"},
+  {id:66, name:"NT Tilak Varma",    role:"All-rounder",  base:80, nat:"India",      team:"MI",  stats:"AR | ₹8 Cr"},
+  {id:67, name:"WG Jacks",          role:"All-rounder",  base:53, nat:"England",    team:"MI",  stats:"AR | ₹5.25 Cr"},
+  {id:68, name:"TU Deshpande",      role:"Bowler",       base:65, nat:"India",      team:"RR",  stats:"BOWL | ₹6.5 Cr"},
+  {id:69, name:"Mohammed Shami",    role:"Bowler",       base:100,nat:"India",      team:"LSG", stats:"BOWL | ₹10 Cr"},
+  {id:70, name:"PP Shaw",           role:"Batsman",      base:8,  nat:"India",      team:"DC",  stats:"BAT | ₹0.75 Cr"},
+  {id:71, name:"R Ravindra",        role:"All-rounder",  base:20, nat:"New Zealand",team:"KKR", stats:"AR | ₹2 Cr"},
+  {id:72, name:"MJ Henry",          role:"Bowler",       base:20, nat:"New Zealand",team:"CSK", stats:"BOWL | ₹2 Cr"},
+  {id:73, name:"Auqib Nabi",        role:"All-rounder",  base:84, nat:"India",      team:"DC",  stats:"AR | ₹8.4 Cr"},
+  {id:74, name:"Mustafizur Rahman", role:"Bowler",       base:92, nat:"Bangladesh", team:"KKR", stats:"BOWL | ₹9.2 Cr"},
+  {id:75, name:"Ramandeep Singh",   role:"All-rounder",  base:40, nat:"India",      team:"KKR", stats:"AR | ₹4 Cr"},
+  {id:76, name:"KK Ahmed",          role:"Bowler",       base:48, nat:"India",      team:"CSK", stats:"BOWL | ₹4.8 Cr"},
+  {id:77, name:"AM Ghazanfar",      role:"Bowler",       base:48, nat:"Afghanistan",team:"MI",  stats:"BOWL | ₹4.8 Cr"},
+  {id:78, name:"A Kamboj",          role:"All-rounder",  base:34, nat:"India",      team:"CSK", stats:"AR | ₹3.4 Cr"},
+  {id:79, name:"JO Holder",         role:"All-rounder",  base:70, nat:"W.Indies",   team:"GT",  stats:"AR | ₹7 Cr"},
+  {id:80, name:"JP Inglis",         role:"Wicketkeeper", base:86, nat:"Australia",  team:"LSG", stats:"BAT | ₹8.6 Cr"},
+  {id:81, name:"Harshit Rana",      role:"Bowler",       base:40, nat:"India",      team:"KKR", stats:"BOWL | ₹4 Cr"},
+  {id:82, name:"A Raghuvanshi",     role:"Batsman",      base:30, nat:"India",      team:"KKR", stats:"BAT | ₹3 Cr"},
+  {id:83, name:"Abdul Samad",       role:"All-rounder",  base:42, nat:"India",      team:"LSG", stats:"AR | ₹4.2 Cr"},
+  {id:84, name:"A Badoni",          role:"All-rounder",  base:40, nat:"India",      team:"LSG", stats:"AR | ₹4 Cr"},
+  {id:85, name:"AK Markram",        role:"Batsman",      base:20, nat:"S.Africa",   team:"LSG", stats:"BAT | ₹2 Cr"},
+  {id:86, name:"Avesh Khan",        role:"Bowler",       base:98, nat:"India",      team:"LSG", stats:"BOWL | ₹9.75 Cr"},
+  {id:87, name:"MR Marsh",          role:"All-rounder",  base:34, nat:"Australia",  team:"LSG", stats:"AR | ₹3.4 Cr"},
+  {id:88, name:"N Wadhera",         role:"Batsman",      base:42, nat:"India",      team:"PBKS",stats:"BAT | ₹4.2 Cr"},
+  {id:89, name:"Shashank Singh",    role:"All-rounder",  base:55, nat:"India",      team:"PBKS",stats:"AR | ₹5.5 Cr"},
+  {id:90, name:"GD Phillips",       role:"Batsman",      base:20, nat:"New Zealand",team:"GT",  stats:"BAT | ₹2 Cr"},
+  {id:91, name:"BJ Dwarshuis",      role:"All-rounder",  base:44, nat:"Netherlands",team:"PBKS",stats:"AR | ₹4.4 Cr"},
+  {id:92, name:"C Connolly",        role:"All-rounder",  base:30, nat:"Australia",  team:"PBKS",stats:"AR | ₹3 Cr"},
+  {id:93, name:"L Ngidi",           role:"Bowler",       base:20, nat:"S.Africa",   team:"DC",  stats:"BOWL | ₹2 Cr"},
+  {id:94, name:"P Nissanka",        role:"Batsman",      base:40, nat:"Sri Lanka",  team:"DC",  stats:"BAT | ₹4 Cr"},
+  {id:95, name:"AM Rahane",         role:"Batsman",      base:15, nat:"India",      team:"KKR", stats:"BAT | ₹1.5 Cr"},
+  {id:96, name:"Sandeep Sharma",    role:"Bowler",       base:40, nat:"India",      team:"RR",  stats:"BOWL | ₹4 Cr"},
+  {id:97, name:"KH Pandya",         role:"All-rounder",  base:58, nat:"India",      team:"RCB", stats:"AR | ₹5.75 Cr"},
+  {id:98, name:"Rasikh Salam",      role:"Bowler",       base:60, nat:"India",      team:"RCB", stats:"BOWL | ₹6 Cr"},
+  {id:99, name:"SN Khan",           role:"Batsman",      base:8,  nat:"India",      team:"CSK", stats:"BAT | ₹0.75 Cr"},
+  {id:100,name:"D Brevis",          role:"Batsman",      base:22, nat:"S.Africa",   team:"CSK", stats:"BAT | ₹2.2 Cr"},
+
+  // ── West Indies ───────────────────────────────────────────────
+  {id:101,name:"Shai Hope",         role:"Wicketkeeper", base:100,nat:"West Indies", team:"-",  stats:"WK-BAT | WI Captain"},
+  {id:102,name:"Shimron Hetmyer",   role:"Batsman",      base:110,nat:"West Indies", team:"RR",  stats:"BAT | Hard Hitter"},
+  {id:103,name:"Johnson Charles",   role:"Batsman",      base:50, nat:"West Indies", team:"-",  stats:"BAT | Opener"},
+  {id:104,name:"Roston Chase",      role:"All-rounder",  base:75, nat:"West Indies", team:"-",  stats:"AR | Spin AR"},
+  {id:105,name:"Matthew Forde",     role:"Bowler",       base:50, nat:"West Indies", team:"-",  stats:"BOWL | Fast Bowler"},
+  {id:106,name:"Jason Holder",      role:"All-rounder",  base:100,nat:"West Indies", team:"GT",  stats:"AR | ₹7 Cr"},
+  {id:107,name:"Akeal Hosein",      role:"Bowler",       base:50, nat:"West Indies", team:"-",  stats:"BOWL | Spinner"},
+  {id:108,name:"Shamar Joseph",     role:"Bowler",       base:75, nat:"West Indies", team:"-",  stats:"BOWL | Pace Bowler"},
+  {id:109,name:"Brandon King",      role:"Batsman",      base:75, nat:"West Indies", team:"-",  stats:"BAT | Top Order"},
+  {id:110,name:"Gudakesh Motie",    role:"Bowler",       base:50, nat:"West Indies", team:"-",  stats:"BOWL | Left Arm Spin"},
+  {id:111,name:"Rovman Powell",     role:"Batsman",      base:100,nat:"West Indies", team:"KKR", stats:"BAT | Finisher"},
+  {id:112,name:"Sherfane Rutherford",role:"All-rounder", base:75, nat:"West Indies", team:"MI",  stats:"AR | Hard Hitter"},
+  {id:113,name:"Quentin Sampson",   role:"Wicketkeeper", base:30, nat:"West Indies", team:"-",  stats:"WK-BAT"},
+  {id:114,name:"Jayden Seales",     role:"Bowler",       base:75, nat:"West Indies", team:"-",  stats:"BOWL | Pace Bowler"},
+  {id:115,name:"Romario Shepherd",  role:"All-rounder",  base:100,nat:"West Indies", team:"-",  stats:"AR | Pace AR"},
+
+  // ── England ───────────────────────────────────────────────────
+  {id:116,name:"Harry Brook",       role:"Batsman",      base:200,nat:"England",     team:"-",  stats:"BAT | ENG Captain"},
+  {id:117,name:"Rehan Ahmed",       role:"Bowler",       base:75, nat:"England",     team:"-",  stats:"BOWL | Leg Spinner"},
+  {id:118,name:"Jofra Archer",      role:"Bowler",       base:150,nat:"England",     team:"RR",  stats:"BOWL | ₹12.5 Cr"},
+  {id:119,name:"Tom Banton",        role:"Wicketkeeper", base:75, nat:"England",     team:"GT",  stats:"WK-BAT | ₹2 Cr"},
+  {id:120,name:"Jacob Bethell",     role:"All-rounder",  base:100,nat:"England",     team:"RCB", stats:"AR | ₹2.6 Cr"},
+  {id:121,name:"Jos Buttler",       role:"Wicketkeeper", base:150,nat:"England",     team:"GT",  stats:"WK-BAT | ₹15.75 Cr"},
+  {id:122,name:"Sam Curran",        role:"All-rounder",  base:150,nat:"England",     team:"RR",  stats:"AR | ₹2.4 Cr"},
+  {id:123,name:"Liam Dawson",       role:"All-rounder",  base:50, nat:"England",     team:"-",  stats:"AR | Spin AR"},
+  {id:124,name:"Ben Duckett",       role:"Batsman",      base:75, nat:"England",     team:"DC",  stats:"BAT | ₹2 Cr"},
+  {id:125,name:"Will Jacks",        role:"All-rounder",  base:100,nat:"England",     team:"MI",  stats:"AR | ₹5.25 Cr"},
+  {id:126,name:"Jamie Overton",     role:"All-rounder",  base:50, nat:"England",     team:"CSK", stats:"AR | ₹1.5 Cr"},
+  {id:127,name:"Adil Rashid",       role:"Bowler",       base:100,nat:"England",     team:"-",  stats:"BOWL | Leg Spinner"},
+  {id:128,name:"Phil Salt",         role:"Wicketkeeper", base:100,nat:"England",     team:"RCB", stats:"WK-BAT | ₹11.5 Cr"},
+  {id:129,name:"Josh Tongue",       role:"Bowler",       base:50, nat:"England",     team:"-",  stats:"BOWL | Pace Bowler"},
+  {id:130,name:"Luke Wood",         role:"Bowler",       base:50, nat:"England",     team:"GT",  stats:"BOWL | ₹0.75 Cr"},
+
+  // ── South Africa ──────────────────────────────────────────────
+  {id:131,name:"Aiden Markram",     role:"Batsman",      base:100,nat:"S.Africa",    team:"LSG", stats:"BAT | ₹2 Cr"},
+  {id:132,name:"Corbin Bosch",      role:"All-rounder",  base:75, nat:"S.Africa",    team:"-",  stats:"AR | Pace AR"},
+  {id:133,name:"Quinton de Kock",   role:"Wicketkeeper", base:100,nat:"S.Africa",    team:"MI",  stats:"WK-BAT | ₹1 Cr"},
+  {id:134,name:"Marco Jansen",      role:"All-rounder",  base:100,nat:"S.Africa",    team:"PBKS",stats:"AR | ₹7 Cr"},
+  {id:135,name:"George Linde",      role:"All-rounder",  base:50, nat:"S.Africa",    team:"-",  stats:"AR | Spin AR"},
+  {id:136,name:"Keshav Maharaj",    role:"Bowler",       base:75, nat:"S.Africa",    team:"-",  stats:"BOWL | Left Arm Spin"},
+  {id:137,name:"Kwena Maphaka",     role:"Bowler",       base:75, nat:"S.Africa",    team:"RR",  stats:"BOWL | ₹1.5 Cr"},
+  {id:138,name:"David Miller",      role:"Batsman",      base:100,nat:"S.Africa",    team:"DC",  stats:"BAT | ₹2 Cr"},
+  {id:139,name:"Lungi Ngidi",       role:"Bowler",       base:75, nat:"S.Africa",    team:"DC",  stats:"BOWL | ₹2 Cr"},
+  {id:140,name:"Anrich Nortje",     role:"Bowler",       base:100,nat:"S.Africa",    team:"LSG", stats:"BOWL | ₹2 Cr"},
+  {id:141,name:"Kagiso Rabada",     role:"Bowler",       base:150,nat:"S.Africa",    team:"GT",  stats:"BOWL | ₹10.75 Cr"},
+  {id:142,name:"Ryan Rickelton",    role:"Wicketkeeper", base:50, nat:"S.Africa",    team:"MI",  stats:"WK-BAT | ₹1 Cr"},
+  {id:143,name:"Jason Smith",       role:"Bowler",       base:30, nat:"S.Africa",    team:"-",  stats:"BOWL | Pace Bowler"},
+  {id:144,name:"Tristan Stubbs",    role:"Batsman",      base:75, nat:"S.Africa",    team:"-",  stats:"BAT | Hard Hitter"},
+
+  // ── Australia ─────────────────────────────────────────────────
+  {id:145,name:"Mitchell Marsh",    role:"All-rounder",  base:150,nat:"Australia",   team:"LSG", stats:"AR | ₹3.4 Cr"},
+  {id:146,name:"Xavier Bartlett",   role:"Bowler",       base:75, nat:"Australia",   team:"-",  stats:"BOWL | Pace Bowler"},
+  {id:147,name:"Cooper Connolly",   role:"All-rounder",  base:50, nat:"Australia",   team:"-",  stats:"AR | Young Gun"},
+  {id:148,name:"Tim David",         role:"Batsman",      base:100,nat:"Australia",   team:"MI",  stats:"BAT | Finisher"},
+  {id:149,name:"Ben Dwarshuis",     role:"All-rounder",  base:50, nat:"Australia",   team:"PBKS",stats:"AR | ₹4.4 Cr"},
+  {id:150,name:"Cameron Green",     role:"All-rounder",  base:200,nat:"Australia",   team:"KKR", stats:"AR | ₹25.2 Cr"},
+  {id:151,name:"Nathan Ellis",      role:"Bowler",       base:75, nat:"Australia",   team:"CSK", stats:"BOWL | ₹2 Cr"},
+  {id:152,name:"Josh Hazlewood",    role:"Bowler",       base:150,nat:"Australia",   team:"RCB", stats:"BOWL | ₹12.5 Cr"},
+  {id:153,name:"Travis Head",       role:"Batsman",      base:150,nat:"Australia",   team:"SRH", stats:"BAT | ₹14 Cr"},
+  {id:154,name:"Josh Inglis",       role:"Wicketkeeper", base:100,nat:"Australia",   team:"LSG", stats:"WK-BAT | ₹8.6 Cr"},
+  {id:155,name:"Matthew Kuhnemann", role:"Bowler",       base:50, nat:"Australia",   team:"-",  stats:"BOWL | Left Arm Spin"},
+  {id:156,name:"Glenn Maxwell",     role:"All-rounder",  base:150,nat:"Australia",   team:"-",  stats:"AR | Big Show"},
+  {id:157,name:"Matthew Renshaw",   role:"Batsman",      base:50, nat:"Australia",   team:"-",  stats:"BAT | Top Order"},
+  {id:158,name:"Marcus Stoinis",    role:"All-rounder",  base:100,nat:"Australia",   team:"PBKS",stats:"AR | ₹11 Cr"},
+  {id:159,name:"Adam Zampa",        role:"Bowler",       base:100,nat:"Australia",   team:"-",  stats:"BOWL | Leg Spinner"},
+];
+
+const TEAMS=[
+  {id:"CSK", name:"Chennai Super Kings",         color:"#FFD700", emoji:"🦁", logo:"csk.png"},
+  {id:"MI",  name:"Mumbai Indians",              color:"#004BA0", emoji:"🔵", logo:"mi.png"},
+  {id:"RCB", name:"Royal Challengers Bengaluru", color:"#c8a951", emoji:"👑", logo:"rcb.png"},
+  {id:"KKR", name:"Kolkata Knight Riders",       color:"#8B5CF6", emoji:"⚔️", logo:"kkr.png"},
+  {id:"SRH", name:"Sunrisers Hyderabad",         color:"#FF6B00", emoji:"🌅", logo:"srh.png"},
+  {id:"RR",  name:"Rajasthan Royals",            color:"#e91e8c", emoji:"👸", logo:"rr.png"},
+  {id:"DC",  name:"Delhi Capitals",              color:"#0078BC", emoji:"🦅", logo:"dc.jpg"},
+  {id:"PBKS",name:"Punjab Kings",                color:"#ED1B24", emoji:"🦁", logo:"pbks.png"},
+  {id:"GT",  name:"Gujarat Titans",              color:"#c8a951", emoji:"⚡", logo:"gt.png"},
+  {id:"LSG", name:"Lucknow Super Giants",        color:"#00bcd4", emoji:"🦟", logo:"lsg.jpg"},
+];
+
+const ROLE_META={
+  "Batsman":     {color:"#38bdf8",icon:"🏏"},
+  "Bowler":      {color:"#f87171",icon:"🎳"},
+  "All-rounder": {color:"#4ade80",icon:"⭐"},
+  "Wicketkeeper":{color:"#c084fc",icon:"🧤"},
+};
+const PURSE_LAKHS=8000;
+function fmt(l){return l>=100?'₹'+(l/100).toFixed(2)+' Cr':'₹'+l+' L';}
+
+</script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+<div id="setupScreen">
+  <div class="sc">
+    <div class="st">📺 STAGE DISPLAY</div>
+    <input class="si" id="s_dbUrl" placeholder="Database URL"/>
+    <input class="si" id="s_apiKey" placeholder="API Key"/>
+    <button class="sb" onclick="go()">CONNECT →</button>
+  </div>
+</div>
+
+<div id="stageRoot">
+  <div class="bg"></div>
+  <div class="pts" id="pts"></div>
+  <div class="hdr">
+    <div class="brand">🏏 IPL AUCTION 2025</div>
+    <div class="lpill"><div class="ldot"></div><span class="ltxt">LIVE</span></div>
+  </div>
+  <div class="main" id="main">
+    <div class="idle"><div class="idle-ic">🏏</div><div class="idle-tx">AUCTION BEGINS SOON</div><div class="idle-sx">Waiting for host...</div></div>
+  </div>
+  <div class="side"><div class="slbl">SOLD PLAYERS</div><div id="slist" style="max-height:280px;overflow-y:auto"><div style="color:#374151;font-size:12px;text-align:center;padding:8px">—</div></div></div>
+  <div class="ticker"><span class="tickertxt" id="tkr">🏏 IPL AUCTION 2025 &nbsp;•&nbsp; LIVE BIDDING &nbsp;•&nbsp; 10 TEAMS &nbsp;•&nbsp; ₹80 CR PURSE EACH &nbsp;•&nbsp;</span></div>
+  <div class="pbar" id="pbar"></div>
+  <div id="soldOv"><div class="sstamp">SOLD!</div><div class="sinfo" id="sinf"></div></div>
+  <div id="unsoldOv"><div class="ustamp">UNSOLD</div></div>
+</div>
+
+<script>
+let db,tp={},sp=[];
+TEAMS.forEach(t=>tp[t.id]=PURSE_LAKHS);
+
+function lh(t,sz=40){const src=t.logo||`images/teams/${t.id.toLowerCase()}.png`;return `<img src="${src}" style="width:${sz}px;height:${sz}px;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"/><span style="display:none;font-size:${Math.round(sz*.65)}px">${t.emoji}</span>`;}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  renderPbar();
+  const s=localStorage.getItem('ipl_fb_config');
+  if(s){try{const c=JSON.parse(s);document.getElementById('s_dbUrl').value=c.databaseURL||'';document.getElementById('s_apiKey').value=c.apiKey||'';}catch(e){}}
+  const pc=document.getElementById('pts');
+  for(let i=0;i<25;i++){const p=document.createElement('div');p.className='pt';p.style.cssText=`left:${Math.random()*100}%;--d:${3+Math.random()*4}s;--dl:${Math.random()*5}s`;pc.appendChild(p);}
+});
+
+function go(){
+  const url=document.getElementById('s_dbUrl').value.trim();
+  const key=document.getElementById('s_apiKey').value.trim();
+  if(!url){alert('Enter Database URL');return;}
+  try{
+    if(!firebase.apps.length)firebase.initializeApp({databaseURL:url,apiKey:key});
+    db=firebase.database();
+    document.getElementById('setupScreen').style.display='none';
+    document.getElementById('stageRoot').style.display='block';
+    listen();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+function listen(){
+  db.ref('auction').on('value',snap=>{
+    const d=snap.val();
+    if(!d||d.phase==='idle'){rIdle();return;}
+    if(d.phase==='bidding'){rBid(d);return;}
+    if(d.phase==='sold'){rSold(d);return;}
+    if(d.phase==='unsold'){rUnsold();return;}
+  });
+  db.ref('timer').on('value',snap=>{
+    const d=snap.val();if(!d)return;
+    const el=document.getElementById('stimer');if(!el)return;
+    const v=Math.max(0,d.value);
+    el.textContent=String(v).padStart(2,'0')+'s';
+    el.style.color=v<=10?'#ff4444':'var(--gold)';
+  });
+  db.ref('sold').on('value',snap=>{sp=snap.val()?Object.values(snap.val()):[];rSide();rTicker();});
+  db.ref('purses').on('value',snap=>{if(snap.val()){tp=snap.val();renderPbar();}});
+}
+
+function rIdle(){
+  document.getElementById('soldOv').style.display='none';
+  document.getElementById('unsoldOv').style.display='none';
+  document.getElementById('main').innerHTML=`<div class="idle"><div class="idle-ic">🏏</div><div class="idle-tx">AWAITING NEXT PLAYER</div><div class="idle-sx">Host is selecting...</div></div>`;
+}
+
+function rBid(d){
+  document.getElementById('soldOv').style.display='none';
+  document.getElementById('unsoldOv').style.display='none';
+  const rm=ROLE_META[d.role]||{color:'#fff',icon:'🏏'};
+  const t=d.team?TEAMS.find(x=>x.id===d.team):null;
+  const img=d.image||`images/players/${(d.name||'').toLowerCase().replace(/ /g,'_')}.png`;
+  document.getElementById('main').innerHTML=`
+    <div class="pstage">
+      <div class="awrap">
+        <div class="aglow" style="background:${rm.color}"></div>
+        <div class="aring" style="border-color:${rm.color}"></div>
+        <img class="sphoto" src="${img}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+        <div class="sfb" style="background:${rm.color}18;border-color:${rm.color}44;display:none">${rm.icon}</div>
+      </div>
+      <div class="sname">${d.name||''}</div>
+      <div class="smeta"><span class="rpill" style="background:${rm.color}">${d.role||''}</span><span class="snat">${d.nat||''}</span></div>
+      <div class="bidwrap"><div class="bidlbl">CURRENT BID</div><div class="bidprice">${fmt(d.price||0)}</div></div>
+      ${t?`<div class="tbadge" style="border-color:${t.color};color:${t.color}"><div class="tblbl">HIGHEST BIDDER</div><div class="tbrow">${lh(t,38)}<div class="tbname">${t.name}</div></div></div>`:`<div style="color:#374151;font-family:var(--font-d);font-size:16px;letter-spacing:3px;margin-bottom:14px">PLACE YOUR BIDS</div>`}
+      <div class="timer" id="stimer" style="color:var(--gold)">30s</div>
+    </div>`;
+}
+
+function rSold(d){
+  const t=d.team?TEAMS.find(x=>x.id===d.team):null;
+  document.getElementById('sinf').innerHTML=`
+    <div class="splayer">${d.name||''}</div>
+    <div class="stolbl">SOLD TO</div>
+    <div class="stewrap">${t?lh(t,54):''}<div class="stename" style="color:${t?.color||'#fff'}">${t?.name||d.team}</div></div>
+    <div class="sprice">${fmt(d.price||0)}</div>`;
+  document.getElementById('soldOv').style.display='flex';
+  confetti();
+}
+
+function rUnsold(){
+  document.getElementById('soldOv').style.display='none';
+  document.getElementById('unsoldOv').style.display='flex';
+  setTimeout(()=>document.getElementById('unsoldOv').style.display='none',2500);
+}
+
+function rSide(){
+  const el=document.getElementById('slist');
+  if(!sp.length){el.innerHTML='<div style="color:#374151;font-size:12px;text-align:center;padding:8px">—</div>';return;}
+  el.innerHTML=[...sp].reverse().slice(0,10).map(s=>{
+    const t=TEAMS.find(x=>x.id===s.soldTeam);
+    return `<div class="srow"><span class="sn">${s.name}</span><span class="st2" style="color:${t?.color||'#fff'}">${s.soldTeam}</span><span class="sp2">${fmt(s.soldPrice)}</span></div>`;
+  }).join('');
+}
+
+function renderPbar(){
+  const el=document.getElementById('pbar');if(!el)return;
+  el.innerHTML=TEAMS.map(t=>`<div class="pi" style="border-color:${t.color}55"><div class="piid" style="color:${t.color}">${t.id}</div><div class="piamt">${fmt(tp[t.id]??PURSE_LAKHS)}</div></div>`).join('');
+}
+
+function rTicker(){
+  if(!sp.length)return;
+  document.getElementById('tkr').textContent='🏏 SOLD: '+sp.map(s=>`${s.name} → ${s.soldTeam} (${fmt(s.soldPrice)})`).join(' • ')+' • ';
+}
+
+function confetti(){
+  const cols=['#FFD700','#FF6B00','#EC1C24','#4fc3f7','#a5d6a7','#fff'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div');c.className='confetti';
+    c.style.cssText=`left:${Math.random()*100}%;top:-10px;background:${cols[i%cols.length]};--d:${1.5+Math.random()*2}s;--dl:${Math.random()*.6}s;transform:rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);setTimeout(()=>c.remove(),4000);
+  }
+}
+</script>
+</body>
+</html>
